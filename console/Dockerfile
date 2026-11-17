@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-# Multi-stage Dockerfile for Next.js SupportPilot Console
+# Multi-stage Dockerfile for Next.js CareOps Console
 
 FROM node:20-alpine AS base
 

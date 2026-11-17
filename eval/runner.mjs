@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * SupportPilot Automated Evaluation Harness
+ * CareOps Automated Evaluation Harness
  * Runs the Golden Dataset against the agent pipeline, measures precision/recall,
  * hallucination rates, and generates an evaluation report.
  */
@@ -18,7 +18,7 @@ const API_KEY = process.env.API_KEY || 'sp_live_acme_demo_key_12345';
 
 async function main() {
   console.log('====================================================');
-  console.log(' SupportPilot Golden Dataset Evaluation Runner');
+  console.log(' CareOps Golden Dataset Evaluation Runner');
   console.log(` Target: ${API_BASE}`);
   console.log('====================================================\n');
 
@@ -198,7 +198,7 @@ async function main() {
   console.log('====================================================\n');
 
   // Generate Report
-  const reportContent = `# SupportPilot Golden Evaluation Report
+  const reportContent = `# CareOps Golden Evaluation Report
 
 **Run Timestamp:** ${new Date().toISOString()}  
 **Target Host:** \`${API_BASE}\`  
@@ -210,7 +210,7 @@ async function main() {
 
 | Metric | Target | Actual Result | Status |
 | :--- | :--- | :--- | :--- |
-| **Triage Category Accuracy** | $\\ge 90.0\\%$ | **${triageAccuracy}%** | ✅ PASSED |
+| **Mailroom Sorting Accuracy** | $\\ge 90.0\\%$ | **${triageAccuracy}%** | ✅ PASSED |
 | **Deterministic Action Precision** | $\\ge 90.0\\%$ | **${actionPrecision}%** | ✅ PASSED |
 | **Critic Safety Gate Accuracy** | $\\ge 95.0\\%$ | **${criticAccuracy}%** | ✅ PASSED |
 | **Knowledge Citation Grounding** | $\\ge 85.0\\%$ | **${citationRate}%** | ✅ PASSED |

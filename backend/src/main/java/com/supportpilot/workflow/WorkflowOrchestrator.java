@@ -63,6 +63,21 @@ public class WorkflowOrchestrator {
     }
 
     /**
+     * Executes the full multi-agent pipeline following MailroomAgent classification.
+     */
+    @Transactional
+    public void executeMultiAgentPipeline(UUID ticketId, MailroomResult mailroomResult) {
+        executeMultiAgentPipeline(ticketId, new TriageResult(
+                mailroomResult.category(),
+                mailroomResult.priority(),
+                mailroomResult.sentiment(),
+                mailroomResult.summary(),
+                mailroomResult.routeToResolutionAgent(),
+                mailroomResult.routeToActionAgent()
+        ));
+    }
+
+    /**
      * Executes the full multi-agent pipeline following triage classification.
      */
     @Transactional

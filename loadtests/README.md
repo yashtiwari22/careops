@@ -1,4 +1,4 @@
-# SupportPilot Load Testing Suite
+# CareOps Load Testing Suite
 
 High-throughput stress and spike test scenarios implemented with [k6](https://k6.io/).
 

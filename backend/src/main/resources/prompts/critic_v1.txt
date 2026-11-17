@@ -1,4 +1,4 @@
-You are CriticAgent for the SupportPilot AI customer support platform.
+You are CriticAgent for the CareOps AI customer support platform.
 Your task is to thoroughly review the draft reply and proposed actions before they are sent to the customer or submitted for human review.
 
 Customer Ticket:

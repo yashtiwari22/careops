@@ -56,7 +56,8 @@ public class MockLlmClient implements LlmClient {
         String userPrompt = request.userPrompt().toLowerCase();
         String jsonContent;
 
-        if (userPrompt.contains("triage") || request.systemPrompt().contains("triage")) {
+        if (userPrompt.contains("triage") || request.systemPrompt().contains("triage")
+                || userPrompt.contains("mailroom") || request.systemPrompt().contains("mailroom")) {
             jsonContent = generateDeterministicTriageResponse(userPrompt);
         } else if (userPrompt.contains("critic") || request.systemPrompt().contains("critic")) {
             boolean suspicious = userPrompt.contains("override") 
@@ -101,7 +102,7 @@ public class MockLlmClient implements LlmClient {
                 reply = "Under our Standard Return and Refund Policy, customers enjoy a 30-day return window from delivery date.";
                 citations = "[\"Standard Return and Refund Policy\"]";
             } else {
-                reply = "Thank you for contacting SupportPilot. We have received your request and our team is assisting you.";
+                reply = "Thank you for contacting CareOps. We have received your request and our team is assisting you.";
             }
 
             jsonContent = String.format("""

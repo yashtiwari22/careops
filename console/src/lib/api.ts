@@ -1,5 +1,5 @@
 /**
- * Typed REST API client for SupportPilot Console.
+ * Typed REST API client for CareOps Console.
  */
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';

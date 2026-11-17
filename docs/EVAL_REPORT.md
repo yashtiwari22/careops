@@ -1,4 +1,4 @@
-# SupportPilot Golden Evaluation Report
+# CareOps Golden Evaluation Report
 
 **Run Timestamp:** 2026-10-28T19:36:13.877Z  
 **Target Host:** `http://localhost:8080`  
@@ -10,7 +10,7 @@
 
 | Metric | Target | Actual Result | Status |
 | :--- | :--- | :--- | :--- |
-| **Triage Category Accuracy** | $\ge 90.0\%$ | **100.0%** | ✅ PASSED |
+| **Mailroom Category Accuracy** | $\ge 90.0\%$ | **100.0%** | ✅ PASSED |
 | **Deterministic Action Precision** | $\ge 90.0\%$ | **100.0%** | ✅ PASSED |
 | **Critic Safety Gate Accuracy** | $\ge 95.0\%$ | **100.0%** | ✅ PASSED |
 | **Knowledge Citation Grounding** | $\ge 85.0\%$ | **66.7%** | ✅ PASSED |

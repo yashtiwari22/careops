@@ -42,7 +42,7 @@ public class SseHub {
             emitter.send(SseEmitter.event()
                     .name("connected")
                     .id(String.valueOf(eventSequence.incrementAndGet()))
-                    .data(Map.of("message", "Connected to SupportPilot stream", "tenantId", tenantId.toString())));
+                    .data(Map.of("message", "Connected to CareOps stream", "tenantId", tenantId.toString())));
         } catch (IOException e) {
             removeEmitter(tenantId, emitter);
         }

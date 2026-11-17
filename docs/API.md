@@ -1,4 +1,4 @@
-# SupportPilot API Reference
+# CareOps API Reference
 
 ## Authentication
 

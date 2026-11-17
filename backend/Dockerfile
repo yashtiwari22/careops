@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-# Multi-stage Dockerfile for SupportPilot Spring Boot Backend
+# Multi-stage Dockerfile for CareOps Spring Boot Backend
 
 # Stage 1: Build JAR with Maven wrapper
 FROM eclipse-temurin:21-jdk-alpine AS builder

@@ -63,7 +63,7 @@ export function EvaluationView() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-card/40 border-border/60">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Triage Category Accuracy</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Mailroom Sorting Accuracy</CardTitle>
             <Target className="w-4 h-4 text-emerald-400" />
           </CardHeader>
           <CardContent>

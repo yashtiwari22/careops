@@ -1,6 +1,6 @@
-# SupportPilot $0 Free-Tier Deployment Guide
+# CareOps $0 Free-Tier Deployment Guide
 
-Complete step-by-step instructions for deploying SupportPilot to production using 100% free tiers:
+Complete step-by-step instructions for deploying CareOps to production using 100% free tiers:
 - **Database:** Neon Serverless Postgres (with `pgvector` enabled)
 - **Backend API:** Render Free Web Service (Docker runtime)
 - **Console Frontend:** Vercel Hobby Tier (Next.js serverless / edge)

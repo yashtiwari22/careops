@@ -274,11 +274,11 @@ interface AgentPayloadData {
             </p>
           </div>
 
-          {/* AI Triage Card */}
+          {/* Mailroom Intelligence Card */}
           <div className="rounded-lg border bg-muted/40 p-4 space-y-3">
             <div className="flex items-center gap-2 text-sm font-semibold text-primary">
               <Bot className="w-4 h-4" />
-              <span>AI Triage Intelligence</span>
+              <span>Mailroom Intelligence</span>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
@@ -322,7 +322,7 @@ interface AgentPayloadData {
             <TabsContent value="agents" className="space-y-3 pt-3">
               {agentRuns.length === 0 ? (
                 <div className="text-center py-6 text-sm text-muted-foreground border rounded-lg bg-card/50">
-                  No agent runs recorded yet. Triage worker may be currently processing.
+                  No agent runs recorded yet. Mailroom worker may be currently processing.
                 </div>
               ) : (
                 agentRuns.map((run) => (

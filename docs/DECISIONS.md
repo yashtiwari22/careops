@@ -2,7 +2,7 @@
 
 ## ADR-001: Monorepo Structure & Hexagonal Architecture
 - **Status:** Accepted
-- **Context:** SupportPilot requires backend services, Next.js console, load testing, evaluation pipelines, and infrastructure setup.
+- **Context:** CareOps requires backend services, Next.js console, load testing, evaluation pipelines, and infrastructure setup.
 - **Decision:** Use a clean monorepo layout (`backend/`, `console/`, `eval/`, `loadtests/`, `infra/`, `docs/`). Within the backend, follow a Hexagonal (Ports and Adapters) architecture partitioned by domain feature (`tenant`, `auth`, `ticket`, `workflow`, `agents`, `llm`, `queue`, `approval`, `metrics`, `common`).
 - **Consequences:** Clean separation of business logic from infrastructure; makes swapping LLM clients (Mock vs Gemini) and queue adapters (Postgres vs Kafka) straightforward with zero domain bleed.
 

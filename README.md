@@ -1,6 +1,6 @@
-# SupportPilot
+# CareOps
 
-**SupportPilot** is an event-driven, multi-tenant AI customer support platform built on Hexagonal Architecture (Ports and Adapters). It orchestrates specialized AI agents (Triage, Resolution with RAG, Action with Tool Calling, and Critic with reflection loops) alongside human-in-the-loop review, pluggable event streaming (PostgreSQL SKIP LOCKED & Apache Kafka KRaft), Dead-Letter Queue redrive, and distributed rate limiting.
+**CareOps** is an event-driven, multi-tenant AI customer support operations platform built on Hexagonal Architecture (Ports and Adapters). It orchestrates specialized AI agents (Mailroom for intake and routing, Resolution with RAG, Action with Tool Calling, and Critic with reflection loops) alongside human-in-the-loop review, pluggable event streaming (PostgreSQL SKIP LOCKED & Apache Kafka KRaft), Dead-Letter Queue redrive, and distributed rate limiting.
 
 Designed for $0-cost development and deployment across free tiers (Neon PostgreSQL + pgvector, Render Web Service, Vercel Edge Console, Google Gemini 1.5 Flash).
 
@@ -16,8 +16,8 @@ graph TD
     TicketSvc --> Queue[Queue Port: Postgres SKIP LOCKED / Kafka]
     
     subgraph Multi-Agent Virtual Thread Pipeline
-        Queue --> TriageAgent[TriageAgent: Intent, Priority, Sentiment]
-        TriageAgent --> ResolutionAgent[ResolutionAgent: Hybrid RAG Search]
+        Queue --> MailroomAgent[MailroomAgent: Intent, Priority, Sentiment]
+        MailroomAgent --> ResolutionAgent[ResolutionAgent: Hybrid RAG Search]
         ResolutionAgent --> ActionAgent[ActionAgent: Deterministic Tools]
         ActionAgent --> CriticAgent[CriticAgent: Guardrails & Reflection Gate]
     end
@@ -34,7 +34,7 @@ graph TD
 - **Backend:** Java 21, Spring Boot 3.4.x, Virtual Threads (`Loom`), Flyway, PostgreSQL 16 with pgvector, Hibernate 6, Micrometer Prometheus metrics.
 - **Queue Port:** Pluggable Hexagonal queue with PostgreSQL `SELECT FOR UPDATE SKIP LOCKED` (default $0 setup) and Apache Kafka (KRaft mode).
 - **Agents:**
-  - `TriageAgent`: Structured classification of intent, priority, and sentiment.
+  - `MailroomAgent`: Structured classification of intent, priority, and sentiment with intelligent downstream routing.
   - `ResolutionAgent`: pgvector cosine similarity + full-text hybrid RAG search across knowledge articles with strict citation tracking.
   - `ActionAgent`: Deterministic tool execution (`lookupOrder`, `checkRefundEligibility`, `proposeRefund`).
   - `CriticAgent`: Reflection guardrail evaluating hallucination, policy compliance, and intercepting financial actions ($> $0 refunds) into human approval.
@@ -46,13 +46,13 @@ graph TD
 
 ## Golden Dataset Evaluation Results
 
-SupportPilot includes an automated evaluation harness testing the end-to-end multi-agent pipeline against a labeled golden dataset representing complex customer inquiries, refunds, and prompt injection attacks.
+CareOps includes an automated evaluation harness testing the end-to-end multi-agent pipeline against a labeled golden dataset representing complex customer inquiries, refunds, and prompt injection attacks.
 
 *Verified via live execution against running backend (see [`docs/EVAL_REPORT.md`](docs/EVAL_REPORT.md)):*
 
 | Evaluation Metric | Target | Actual Result | Verification Status |
 | :--- | :--- | :--- | :--- |
-| **Triage Category Accuracy** | $\ge 90.0\%$ | **100.0%** | ✅ PASSED |
+| **Mailroom Sorting Accuracy** | $\ge 90.0\%$ | **100.0%** | ✅ PASSED |
 | **Deterministic Tool Precision** | $\ge 90.0\%$ | **100.0%** | ✅ PASSED |
 | **Critic Safety Gate Accuracy** | $\ge 95.0\%$ | **100.0%** | ✅ PASSED |
 | **Citation Grounding Rate** | $\ge 85.0\%$ | **66.7%** | ✅ PASSED |
@@ -91,7 +91,7 @@ cd backend
 ```
 The backend initializes on port `8080`. Flyway runs schema migrations (`V1`), seeds demo tenants, users, API keys, orders, and knowledge base articles (`V2`), and pgvector auto-indexes embeddings on startup.
 
-Run all 52 backend tests:
+Run all unit tests:
 ```bash
 ./mvnw test
 ```
@@ -128,7 +128,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Load & Stress Testing
 
-SupportPilot includes pre-configured [k6](https://k6.io/) load testing scenarios in `loadtests/`:
+CareOps includes pre-configured [k6](https://k6.io/) load testing scenarios in `loadtests/`:
 
 1. **Peak Load Scenario (100 concurrent VUs):**
    ```bash
@@ -145,7 +145,7 @@ Detailed instructions and options are documented in [`loadtests/README.md`](load
 
 ## Production Deployment ($0 Free Tier)
 
-SupportPilot is designed to run entirely on zero-cost free cloud tiers:
+CareOps is designed to run entirely on zero-cost free cloud tiers:
 - **Database:** Neon PostgreSQL Serverless (Free Tier with pgvector).
 - **Backend:** Render Web Service (Free Tier Docker deployment via [`render.yaml`](render.yaml)). Tuned with `-XX:+UseSerialGC -XX:MaxRAMPercentage=70.0 -XX:+ExitOnOutOfMemoryError` for 512MB RAM bounds.
 - **Frontend:** Vercel Edge (Free Hobby Tier deployment via [`console/vercel.json`](console/vercel.json)).

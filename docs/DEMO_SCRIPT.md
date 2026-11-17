@@ -1,6 +1,6 @@
-# SupportPilot: 3-Minute Walkthrough Demo Script
+# CareOps: 3-Minute Walkthrough Demo Script
 
-This script provides an exact, minute-by-minute walkthrough guide for reviewers, interviewers, or recorded video demonstrations of the SupportPilot platform.
+This script provides an exact, minute-by-minute walkthrough guide for reviewers, interviewers, or recorded video demonstrations of the CareOps platform.
 
 ---
 
@@ -14,9 +14,9 @@ This script provides an exact, minute-by-minute walkthrough guide for reviewers,
 ## ⏱️ Minute 0:00 – 0:45: The Problem & Architecture
 
 ### Talking Points:
-> *"SupportPilot is an event-driven, multi-tenant customer support platform designed to automate high-volume support inquiries without hallucination risks or accidental unauthorized financial actions."*
+> *"CareOps is an event-driven, multi-tenant customer support platform designed to automate high-volume support inquiries without hallucination risks or accidental unauthorized financial actions."*
 >
-> *"It uses Hexagonal Architecture built with Java 21, Spring Boot, PostgreSQL with pgvector, and a Next.js 16 console with real-time Server-Sent Events. Rather than using an unconstrained single LLM call, it orchestrates four specialized agents running concurrently on Java Virtual Threads: Triage, Resolution with Hybrid RAG, Action with deterministic tools, and a CriticAgent reflection guardrail."*
+> *"It uses Hexagonal Architecture built with Java 21, Spring Boot, PostgreSQL with pgvector, and a Next.js 16 console with real-time Server-Sent Events. Rather than using an unconstrained single LLM call, it orchestrates four specialized agents running concurrently on Java Virtual Threads: Mailroom for intent and priority sorting, Resolution with Hybrid RAG, Action with deterministic tools, and a CriticAgent reflection guardrail."*
 
 ### Actions:
 1. Open browser to `http://localhost:3000`.
@@ -60,15 +60,15 @@ This script provides an exact, minute-by-minute walkthrough guide for reviewers,
 ## ⏱️ Minute 2:15 – 3:00: Reliability, Metrics & Evaluation Harness
 
 ### Talking Points:
-> *"SupportPilot is built with strict enterprise reliability controls:"*
+> *"CareOps is built with strict enterprise reliability controls:"*
 >
 > 1. *"**Dead-Letter Queue (DLQ):** Poison-pill messages that exhaust retry limits are routed to the DLQ with exponential backoff and manual redrive APIs."*
 > 2. *"**System & AI Metrics:** The Metrics tab provides live telemetry on queue depth, per-agent latency, and token cost."*
-> 3. *"**Golden Dataset Evaluation:** Finally, the Evaluation tab displays real benchmarks run against our golden dataset, proving 100% triage accuracy, 100% tool precision, and zero unauthorized prompt injection executions."*
+> 3. *"**Golden Dataset Evaluation:** Finally, the Evaluation tab displays real benchmarks run against our golden dataset, proving 100% mailroom sorting accuracy, 100% tool precision, and zero unauthorized prompt injection executions."*
 
 ### Actions:
 1. Click the **"DLQ"** tab to highlight the poison-pill monitoring station and single/bulk redrive capabilities.
 2. Click the **"Metrics"** tab to show live per-agent latency and token cost breakdown.
 3. Click the **"Evaluation"** tab to review the golden dataset accuracy and safety guardrail verification.
 4. Conclude:
-   > *"Everything in SupportPilot runs completely on free cloud tiers—Neon PostgreSQL, Render, Vercel, and Gemini Flash—providing an enterprise-grade AI architecture at zero operating cost."*
+   > *"Everything in CareOps runs completely on free cloud tiers—Neon PostgreSQL, Render, Vercel, and Gemini Flash—providing an enterprise-grade AI architecture at zero operating cost."*

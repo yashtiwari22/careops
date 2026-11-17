@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: supportpilot-backend
+    name: careops-backend
     runtime: docker
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend

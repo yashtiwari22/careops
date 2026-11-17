@@ -124,10 +124,14 @@ public class TicketService {
         WorkflowState toState = WorkflowState.TRIAGED;
         stateMachine.validateTransition(fromState, toState);
 
-        // Execute TriageAgent
+        // Execute MailroomAgent / TriageAgent
         AgentResult agentResult = triageAgent.run(new AgentContext(ticket));
 
-        if (agentResult.payload() instanceof TriageResult triageResult) {
+        if (agentResult.payload() instanceof com.supportpilot.agents.MailroomResult mailroomResult) {
+            ticket.setCategory(mailroomResult.category());
+            ticket.setPriority(mailroomResult.priority());
+            ticket.setSentiment(mailroomResult.sentiment());
+        } else if (agentResult.payload() instanceof TriageResult triageResult) {
             ticket.setCategory(triageResult.category());
             ticket.setPriority(triageResult.priority());
             ticket.setSentiment(triageResult.sentiment());
@@ -166,11 +170,13 @@ public class TicketService {
                 "status", agentResult.success() ? "SUCCESS" : "FAILED"
         ));
 
-        log.info("Successfully triaged ticket {}: Category={}, Priority={}, Sentiment={}",
+        log.info("Successfully triaged/sorted ticket {}: Category={}, Priority={}, Sentiment={}",
                 ticket.getId(), ticket.getCategory(), ticket.getPriority(), ticket.getSentiment());
 
         // Launch full multi-agent pipeline (ResolutionAgent || ActionAgent -> CriticAgent -> Auto/Human Approval)
-        if (agentResult.payload() instanceof TriageResult triageResult) {
+        if (agentResult.payload() instanceof com.supportpilot.agents.MailroomResult mailroomResult) {
+            workflowOrchestrator.executeMultiAgentPipeline(ticket.getId(), mailroomResult);
+        } else if (agentResult.payload() instanceof TriageResult triageResult) {
             workflowOrchestrator.executeMultiAgentPipeline(ticket.getId(), triageResult);
         }
     }

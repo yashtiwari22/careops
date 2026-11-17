@@ -50,7 +50,7 @@ export function LoginCard({ onSuccess }: LoginCardProps) {
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary mb-2">
             <Shield className="h-6 w-6" />
           </div>
-          <CardTitle className="text-2xl font-bold tracking-tight">SupportPilot</CardTitle>
+          <CardTitle className="text-2xl font-bold tracking-tight">CareOps</CardTitle>
           <CardDescription className="text-sm">
             Sign in to access your tenant&apos;s live AI support console
           </CardDescription>

@@ -86,9 +86,16 @@ class GoldenDatasetEvaluationTest {
                     "eval-" + tc.get("id").asText()
             );
 
-            // 1. Triage Agent
+            // 1. Mailroom / Triage Agent
             AgentResult triageResult = triageAgent.run(new AgentContext(ticket));
-            if (triageResult.payload() instanceof TriageResult tr) {
+            if (triageResult.payload() instanceof MailroomResult mr) {
+                if (mr.category().equalsIgnoreCase(expectedCategory)) {
+                    categoryMatches++;
+                }
+                ticket.setCategory(mr.category());
+                ticket.setPriority(mr.priority());
+                ticket.setSentiment(mr.sentiment());
+            } else if (triageResult.payload() instanceof TriageResult tr) {
                 if (tr.category().equalsIgnoreCase(expectedCategory)) {
                     categoryMatches++;
                 }

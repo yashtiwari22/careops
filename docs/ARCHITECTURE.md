@@ -1,6 +1,6 @@
-# SupportPilot Architecture
+# CareOps Architecture
 
-SupportPilot is an event-driven, multi-tenant AI customer support platform built on Hexagonal Architecture (Ports and Adapters).
+CareOps is an event-driven, multi-tenant AI customer support platform built on Hexagonal Architecture (Ports and Adapters).
 
 ## 1. System Overview
 
@@ -16,8 +16,8 @@ flowchart TD
     QueueWorker[Virtual Thread Queue Worker] -->|SELECT FOR UPDATE SKIP LOCKED| Queue
     QueueWorker --> WorkflowOrchestrator[Workflow Orchestrator]
     
-    WorkflowOrchestrator --> TriageAgent[Triage Agent]
-    TriageAgent --> LlmClient[LlmClient Interface]
+    WorkflowOrchestrator --> MailroomAgent[Mailroom Agent]
+    MailroomAgent --> LlmClient[LlmClient Interface]
     LlmClient -.-> MockLlm[MockLlmClient]
     LlmClient -.-> GeminiLlm[GeminiLlmClient]
     
@@ -30,7 +30,7 @@ flowchart TD
 ```mermaid
 stateDiagram-v2
     [*] --> RECEIVED: Ingestion
-    RECEIVED --> TRIAGED: TriageAgent
+    RECEIVED --> TRIAGED: MailroomAgent (Sorted)
     TRIAGED --> PROCESSING: Fan-out Agents
     PROCESSING --> DRAFTED: Resolution & Action Complete
     DRAFTED --> CRITIQUED: CriticAgent

@@ -103,7 +103,7 @@ export default function ConsoleDashboard() {
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="flex items-center gap-2.5 text-muted-foreground text-xs font-medium">
           <div className="h-4 w-4 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-          <span>Loading SupportPilot Console...</span>
+          <span>Loading CareOps Console...</span>
         </div>
       </div>
     );
@@ -154,7 +154,7 @@ export default function ConsoleDashboard() {
       color: 'border-blue-500/30 text-blue-400',
     },
     {
-      title: 'AI Triaged',
+      title: 'Mailroom Sorted',
       states: ['TRIAGED'],
       icon: Bot,
       color: 'border-purple-500/30 text-purple-400',
@@ -186,11 +186,11 @@ export default function ConsoleDashboard() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground font-black text-lg">
-              S
+              C
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-base font-bold tracking-tight">SupportPilot</h1>
+                <h1 className="text-base font-bold tracking-tight">CareOps</h1>
                 <Badge variant="outline" className="text-xs font-medium">
                   {currentUser.tenantName}
                 </Badge>

@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SupportPilot | Multi-Tenant AI Support Platform",
-  description: "Event-driven, multi-agent AI customer support platform with human-in-the-loop controls",
+  title: "CareOps | Multi-Tenant AI Customer Support Platform",
+  description: "Event-driven, multi-agent AI customer support platform with Mailroom routing and human-in-the-loop controls",
 };
 
 export default function RootLayout({

@@ -1,18 +1,18 @@
 # Technical Limitations, Trade-offs & Production Considerations
 
-This document transparently outlines the architectural trade-offs, platform limitations, and production scaling considerations in SupportPilot.
+This document transparently outlines the architectural trade-offs, platform limitations, and production scaling considerations in CareOps.
 
 ---
 
 ## 1. Free-Tier Cloud Topology Trade-offs ($0 Constraints)
 
-To satisfy the strict requirement that SupportPilot deploy and run permanently at **$0 monthly operating cost**, the system embraces several deliberate trade-offs:
+To satisfy the strict requirement that CareOps deploy and run permanently at **$0 monthly operating cost**, the system embraces several deliberate trade-offs:
 
 | Component | Free Tier Constraint | Real-World Impact | Production Mitigation |
 | :--- | :--- | :--- | :--- |
 | **Render Web Service** | Spins down after 15 minutes of inactivity; 512MB RAM cap. | First incoming HTTP request after idle experiences a 40–50s cold start. JVM heap must stay below 350MB. | Use a ping monitor (e.g. UptimeRobot) or upgrade to Render Starter ($7/mo) with 1GB RAM and zero sleep. Use `-XX:+UseSerialGC` to prevent OOM killer. |
 | **Neon PostgreSQL** | Inactivity auto-suspension; 0.5 CU compute. | Brief 2–3 second delay on initial connection handshake after idle periods. | Enable connection pooling via PgBouncer or migrate to dedicated RDS instance under sustained load. |
-| **Google Gemini 1.5 Flash** | 15 Requests Per Minute (RPM); 1M tokens/min free quota. | High concurrency spikes above 15 tickets/minute will trigger HTTP 429 rate limits from Google AI Studio. | SupportPilot implements token-bucket rate limiting and exponential backoff retry. For enterprise scale, switch to Vertex AI pay-as-you-go or self-hosted vLLM. |
+| **Google Gemini 1.5 Flash** | 15 Requests Per Minute (RPM); 1M tokens/min free quota. | High concurrency spikes above 15 tickets/minute will trigger HTTP 429 rate limits from Google AI Studio. | CareOps implements token-bucket rate limiting and exponential backoff retry. For enterprise scale, switch to Vertex AI pay-as-you-go or self-hosted vLLM. |
 
 ---
 
@@ -22,7 +22,7 @@ To satisfy the strict requirement that SupportPilot deploy and run permanently a
 - **Chosen Default:** PostgreSQL transactional queue using `SELECT ... FOR UPDATE SKIP LOCKED`.
 - **Rationale:** Requires zero additional infrastructure, provides ACID guarantees alongside ticket state updates, and incurs $0 hosting cost.
 - **Limitation:** Throughput caps around 5,000–10,000 writes/second due to WAL contention and row locking overhead.
-- **Mitigation:** SupportPilot incorporates a pluggable hexagonal queue abstraction (`TicketQueue` port). Setting `supportpilot.queue.type=kafka` switches seamlessly to the high-throughput `KafkaTicketQueue` with tenant-keyed partitioning.
+- **Mitigation:** CareOps incorporates a pluggable hexagonal queue abstraction (`TicketQueue` port). Setting `supportpilot.queue.type=kafka` switches seamlessly to the high-throughput `KafkaTicketQueue` with tenant-keyed partitioning.
 
 ### B. In-Memory Token Bucket vs. Distributed Redis
 - **Chosen Default:** High-performance concurrent in-memory `TenantRateLimiter` using `ConcurrentHashMap`.

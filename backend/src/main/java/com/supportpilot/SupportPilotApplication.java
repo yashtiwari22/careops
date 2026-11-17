@@ -5,13 +5,12 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
- * Main application entry point for the SupportPilot AI Customer Support Platform.
+ * Legacy application entry point (retained for backward compatibility).
+ * Use {@link CareOpsApplication} instead.
  */
-@SpringBootApplication
-@EnableScheduling
-public class SupportPilotApplication {
+public class SupportPilotApplication extends CareOpsApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(SupportPilotApplication.class, args);
+        CareOpsApplication.main(args);
     }
 }
