@@ -11,3 +11,4 @@ public record MailroomResult(
     boolean routeToResolutionAgent,
     boolean routeToActionAgent
 ) {}
+

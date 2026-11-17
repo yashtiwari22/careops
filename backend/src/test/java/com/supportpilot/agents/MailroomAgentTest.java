@@ -45,3 +45,4 @@ class MailroomAgentTest {
         assertTrue(mailroom.priority().equals("HIGH") || mailroom.priority().equals("MEDIUM"));
     }
 }
+

@@ -132,3 +132,4 @@ public class MailroomAgent implements Agent {
         return trimmed.trim();
     }
 }
+
