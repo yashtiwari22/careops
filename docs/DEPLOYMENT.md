@@ -37,7 +37,7 @@ Complete step-by-step instructions for deploying CareOps to production using 100
 
 1. Sign up at [render.com](https://render.com).
 2. Click **New +** $\to$ **Web Service**.
-3. Connect your GitHub repository: `https://github.com/yashtiwari22/supportpilot`.
+3. Connect your GitHub repository: `https://github.com/yashtiwari22/careops`.
 4. Configure service parameters:
    - **Name:** `supportpilot-api`
    - **Region:** Ohio (US East) or Frankfurt (EU Central)
