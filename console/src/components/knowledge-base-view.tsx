@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api, KbArticleSummary } from '@/lib/api';
+import { api, KbArticleSummary, KbChunkDto } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,11 +27,15 @@ import {
   Search,
   CheckCircle2,
   RefreshCw,
+  Eye,
+  Database,
+  Quote,
 } from 'lucide-react';
 
 export function KnowledgeBaseView() {
   const queryClient = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
+  const [selectedArticle, setSelectedArticle] = useState<KbArticleSummary | null>(null);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -44,6 +48,13 @@ export function KnowledgeBaseView() {
   } = useQuery<KbArticleSummary[]>({
     queryKey: ['kb-articles'],
     queryFn: () => api.kb.listArticles(),
+  });
+
+  const { data: chunks = [], isLoading: isLoadingChunks } = useQuery<KbChunkDto[]>({
+    queryKey: ['kb-chunks', selectedArticle?.id],
+    queryFn: () =>
+      selectedArticle ? api.kb.getArticleChunks(selectedArticle.id) : Promise.resolve([]),
+    enabled: !!selectedArticle,
   });
 
   const createMutation = useMutation({
@@ -60,12 +71,17 @@ export function KnowledgeBaseView() {
     mutationFn: (id: string) => api.kb.deleteArticle(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['kb-articles'] });
+      if (selectedArticle?.id) {
+        setSelectedArticle(null);
+      }
     },
   });
 
-  const filteredArticles = articles.filter((a) =>
-    a.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    a.slug.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredArticles = articles.filter(
+    (a) =>
+      a.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      a.slug.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (a.content && a.content.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   return (
@@ -108,7 +124,7 @@ export function KnowledgeBaseView() {
         <div className="relative w-full sm:w-72">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search articles..."
+            placeholder="Search articles & content..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-8 h-9 text-xs"
@@ -125,7 +141,7 @@ export function KnowledgeBaseView() {
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-36 rounded-lg border bg-card/40 animate-pulse" />
+            <div key={i} className="h-44 rounded-lg border bg-card/40 animate-pulse" />
           ))}
         </div>
       ) : filteredArticles.length === 0 ? (
@@ -151,14 +167,18 @@ export function KnowledgeBaseView() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredArticles.map((article) => (
-            <Card key={article.id} className="bg-card/60 hover:border-primary/40 transition-colors flex flex-col justify-between">
-              <CardHeader className="pb-3">
+            <Card
+              key={article.id}
+              onClick={() => setSelectedArticle(article)}
+              className="bg-card/60 hover:border-primary/50 hover:shadow-md transition-all duration-150 flex flex-col justify-between cursor-pointer group"
+            >
+              <CardHeader className="pb-2.5">
                 <div className="flex items-start justify-between gap-2">
-                  <div className="space-y-1">
-                    <CardTitle className="text-sm font-semibold line-clamp-1">
+                  <div className="space-y-1 min-w-0 flex-1">
+                    <CardTitle className="text-sm font-semibold line-clamp-1 group-hover:text-primary transition-colors">
                       {article.title}
                     </CardTitle>
-                    <CardDescription className="text-[11px] font-mono text-muted-foreground">
+                    <CardDescription className="text-[11px] font-mono text-muted-foreground truncate">
                       /{article.slug}
                     </CardDescription>
                   </div>
@@ -170,32 +190,172 @@ export function KnowledgeBaseView() {
                 </div>
               </CardHeader>
 
-              <CardContent className="pt-0">
-                <div className="flex items-center justify-between text-xs text-muted-foreground border-t pt-3">
+              <CardContent className="space-y-3 pt-0">
+                {/* Content snippet preview */}
+                {article.content ? (
+                  <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed font-sans">
+                    {article.content}
+                  </p>
+                ) : (
+                  <p className="text-xs italic text-muted-foreground/60">
+                    Click to inspect full document content and vector embeddings...
+                  </p>
+                )}
+
+                <div className="flex items-center justify-between text-xs text-muted-foreground border-t border-border/50 pt-2.5">
                   <span className="flex items-center gap-1 text-[11px]">
                     <Clock className="w-3 h-3" />
                     {new Date(article.createdAt).toLocaleDateString()}
                   </span>
 
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 px-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                    onClick={() => {
-                      if (confirm(`Delete "${article.title}" and remove its vector embeddings?`)) {
-                        deleteMutation.mutate(article.id);
-                      }
-                    }}
-                    disabled={deleteMutation.isPending}
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-primary hover:bg-primary/10 text-xs gap-1"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedArticle(article);
+                      }}
+                    >
+                      <Eye className="w-3 h-3" />
+                      <span>Inspect</span>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm(`Delete "${article.title}" and remove its vector embeddings?`)) {
+                          deleteMutation.mutate(article.id);
+                        }
+                      }}
+                      disabled={deleteMutation.isPending}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
       )}
+
+      {/* Inspect Article & Chunks Dialog */}
+      <Dialog open={!!selectedArticle} onOpenChange={(open) => !open && setSelectedArticle(null)}>
+        <DialogContent className="w-[95vw] !max-w-3xl max-h-[90vh] overflow-y-auto p-6">
+          {selectedArticle && (
+            <>
+              <DialogHeader className="border-b pb-4">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <DialogTitle className="text-lg font-bold tracking-tight break-words flex items-center gap-2">
+                      <BookOpen className="w-5 h-5 text-primary shrink-0" />
+                      {selectedArticle.title}
+                    </DialogTitle>
+                    <DialogDescription className="text-xs text-muted-foreground font-mono mt-1">
+                      /{selectedArticle.slug} &bull; Created {new Date(selectedArticle.createdAt).toLocaleString()}
+                    </DialogDescription>
+                  </div>
+                  <Badge variant="outline" className="font-mono text-xs gap-1.5 shrink-0">
+                    <Layers className="w-3.5 h-3.5 text-primary" />
+                    {selectedArticle.chunkCount} vector {selectedArticle.chunkCount === 1 ? 'chunk' : 'chunks'}
+                  </Badge>
+                </div>
+              </DialogHeader>
+
+              <div className="py-2 space-y-5">
+                {/* Full Article Document Content */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs font-semibold text-foreground">
+                    <span className="flex items-center gap-1.5">
+                      <FileText className="w-3.5 h-3.5 text-primary" />
+                      Full Article Content (Markdown)
+                    </span>
+                    <span className="text-[11px] font-normal text-muted-foreground font-mono">
+                      {selectedArticle.content ? `${selectedArticle.content.length} characters` : ''}
+                    </span>
+                  </div>
+                  <div className="p-3.5 rounded-lg border bg-card/60 text-xs leading-relaxed font-sans whitespace-pre-wrap break-words text-foreground/90">
+                    {selectedArticle.content || 'Content not available in summary.'}
+                  </div>
+                </div>
+
+                {/* pgvector Chunks Inspector */}
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-primary">
+                      <Database className="w-4 h-4 text-emerald-400" />
+                      <span>Indexed pgvector Chunks ({chunks.length})</span>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground font-mono">
+                      pgvector: vector(1536) cosine distance
+                    </span>
+                  </div>
+
+                  {isLoadingChunks ? (
+                    <div className="space-y-2">
+                      {[1, 2].map((i) => (
+                        <div key={i} className="h-20 rounded border bg-card/40 animate-pulse" />
+                      ))}
+                    </div>
+                  ) : chunks.length === 0 ? (
+                    <div className="text-xs text-muted-foreground italic p-3 border rounded bg-card/30">
+                      No chunks recorded for this article.
+                    </div>
+                  ) : (
+                    <div className="space-y-2.5">
+                      {chunks.map((chunk) => (
+                        <div
+                          key={chunk.id}
+                          className="p-3 rounded-lg border bg-muted/30 border-border/70 space-y-2"
+                        >
+                          <div className="flex items-center justify-between text-[11px]">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold font-mono text-primary">
+                                Chunk #{chunk.chunkIndex}
+                              </span>
+                              <Badge
+                                variant="secondary"
+                                className="text-[9px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono"
+                              >
+                                {chunk.hasEmbedding ? '✓ 1536-dim Vector Indexed' : 'No Embedding'}
+                              </Badge>
+                            </div>
+                            <span className="text-[10px] font-mono text-muted-foreground">
+                              {chunk.content.split(/\s+/).length} words
+                            </span>
+                          </div>
+
+                          <p className="text-xs leading-relaxed text-foreground/90 whitespace-pre-wrap font-sans bg-background/50 p-2.5 rounded border border-border/40">
+                            {chunk.content}
+                          </p>
+
+                          <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-mono">
+                            <Quote className="w-3 h-3 text-primary/70" />
+                            <span>Citation Reference: </span>
+                            <span className="text-foreground/80 font-semibold">
+                              [{selectedArticle.title} - Chunk {chunk.chunkIndex}]
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <DialogFooter className="border-t pt-3">
+                <Button size="sm" variant="outline" onClick={() => setSelectedArticle(null)}>
+                  Close
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* New Article Dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
@@ -206,7 +366,7 @@ export function KnowledgeBaseView() {
               Add Knowledge Base Article
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Content is instantly chunked and encoded into 768-dim embeddings in pgvector for semantic retrieval.
+              Content is instantly chunked and encoded into 1536-dim embeddings in pgvector for hybrid semantic retrieval.
             </DialogDescription>
           </DialogHeader>
 

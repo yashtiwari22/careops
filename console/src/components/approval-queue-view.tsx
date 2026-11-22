@@ -77,6 +77,13 @@ export function ApprovalQueueView() {
       queryClient.invalidateQueries({ queryKey: ['pending-approvals'] });
       queryClient.invalidateQueries({ queryKey: ['tickets'] });
     },
+    onError: (err) => {
+      console.error('Rejection failed:', err);
+      setRejectingApproval(null);
+      setRejectReason('');
+      queryClient.invalidateQueries({ queryKey: ['pending-approvals'] });
+      queryClient.invalidateQueries({ queryKey: ['tickets'] });
+    },
   });
 
   const handleOpenEdit = (approval: ApprovalDto) => {

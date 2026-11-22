@@ -134,7 +134,16 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     throw new Error(errorMsg);
   }
 
-  return response.json();
+  const text = await response.text();
+  if (!text || !text.trim()) {
+    return {} as T;
+  }
+
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return text as unknown as T;
+  }
 }
 
 export const api = {
@@ -216,6 +225,10 @@ export const api = {
   kb: {
     listArticles: async (): Promise<KbArticleSummary[]> => {
       return request<KbArticleSummary[]>('/api/v1/kb/articles');
+    },
+
+    getArticleChunks: async (id: string): Promise<KbChunkDto[]> => {
+      return request<KbChunkDto[]>(`/api/v1/kb/articles/${id}/chunks`);
     },
 
     createArticle: async (req: CreateArticleRequest): Promise<unknown> => {
@@ -305,7 +318,17 @@ export interface KbArticleSummary {
   id: string;
   title: string;
   slug: string;
+  content?: string;
   chunkCount: number;
+  createdAt: string;
+}
+
+export interface KbChunkDto {
+  id: string;
+  articleId: string;
+  chunkIndex: number;
+  content: string;
+  hasEmbedding: boolean;
   createdAt: string;
 }
 

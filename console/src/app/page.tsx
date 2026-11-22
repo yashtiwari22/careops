@@ -173,7 +173,7 @@ export default function ConsoleDashboard() {
     },
     {
       title: 'Resolved & Sent',
-      states: ['APPROVED', 'SENT'],
+      states: ['APPROVED', 'SENT', 'REJECTED'],
       icon: CheckCircle2,
       color: 'border-emerald-500/30 text-emerald-400',
     },
@@ -499,11 +499,18 @@ export default function ConsoleDashboard() {
                             </div>
 
                             <div className="flex items-center justify-between gap-1 pt-0.5">
-                              {ticket.category ? (
-                                <Badge variant="outline" className="text-[9px] px-1 py-0 uppercase">
-                                  {ticket.category}
-                                </Badge>
-                              ) : <span />}
+                              <div className="flex items-center gap-1">
+                                {ticket.category ? (
+                                  <Badge variant="outline" className="text-[9px] px-1 py-0 uppercase">
+                                    {ticket.category}
+                                  </Badge>
+                                ) : <span />}
+                                {ticket.status === 'REJECTED' && (
+                                  <Badge variant="destructive" className="text-[9px] px-1 py-0 uppercase">
+                                    Rejected
+                                  </Badge>
+                                )}
+                              </div>
                               {getPriorityBadge(ticket.priority)}
                             </div>
                           </CardContent>

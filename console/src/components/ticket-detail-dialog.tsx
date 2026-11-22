@@ -22,6 +22,8 @@ import {
   BookOpen,
   Wrench,
   ShieldCheck,
+  CheckCircle,
+  XCircle,
 } from 'lucide-react';
 
 interface TicketDetailDialogProps {
@@ -44,6 +46,14 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: TicketDetailD
     queryFn: () => (ticketId ? api.tickets.getAgentRuns(ticketId) : Promise.resolve([])),
     enabled: !!ticketId && open,
   });
+
+  const humanApprovalEvent = events.find(
+    (e) => e.eventType === 'HUMAN_APPROVED' || e.eventType === 'HUMAN_EDITED_AND_APPROVED'
+  );
+
+  const humanRejectionEvent = events.find(
+    (e) => e.eventType === 'HUMAN_REJECTED'
+  );
 
   if (!ticket) return null;
 
@@ -72,9 +82,19 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: TicketDetailD
   };
 
 interface AgentPayloadData {
+  // TRIAGE / MAILROOM
+  summary?: string;
+  category?: string;
+  priority?: string;
+  sentiment?: string;
+  routeToActionAgent?: boolean;
+  routeToResolutionAgent?: boolean;
+  // RESOLUTION
   draftReply?: string;
+  reply?: string;                  // fallback for compatibility
   citations?: string[];
-  confidenceScore?: number;
+  confidenceScore?: number;        // legacy — not used by backend
+  // ACTION
   toolName?: string;
   actionExecuted?: boolean;
   proposedAction?: {
@@ -84,9 +104,16 @@ interface AgentPayloadData {
     reason?: string;
   };
   toolOutput?: Record<string, unknown>;
-  score?: number;
-  requiresHumanReview?: boolean;
-  notes?: string;
+  // CRITIC & shared fields
+  verdict?: string;           // APPROVED | NEEDS_REVISION | AWAITING_APPROVAL
+  confidence?: number;        // 0.0–1.0 (used by ResolutionResult and CriticResult)
+  score?: number;             // fallback
+  hallucinationDetected?: boolean;
+  policyViolationDetected?: boolean;
+  critiqueNotes?: string;
+  notes?: string;             // fallback
+  revisionFeedback?: string;
+  involvesFinancialAction?: boolean;
 }
 
   const renderAgentPayload = (run: AgentRun) => {
@@ -97,7 +124,7 @@ interface AgentPayloadData {
       parsed = JSON.parse(run.outputPayload) as AgentPayloadData;
     } catch {
       return (
-        <div className="text-xs bg-muted/60 rounded p-2.5 font-mono overflow-x-auto text-muted-foreground">
+        <div className="text-xs bg-muted/60 rounded p-2.5 font-mono overflow-x-auto break-all text-muted-foreground whitespace-pre-wrap">
           {run.outputPayload}
         </div>
       );
@@ -105,7 +132,49 @@ interface AgentPayloadData {
 
     if (!parsed) return null;
 
+    if (run.agentName === 'TRIAGE' || run.agentName === 'MAILROOM') {
+      return (
+        <div className="space-y-2 pt-1 text-xs">
+          {parsed.summary && (
+            <div className="p-2.5 rounded bg-muted/40 text-foreground/90 leading-relaxed border border-border/40">
+              <span className="font-semibold text-primary">Summary: </span>
+              {parsed.summary}
+            </div>
+          )}
+          <div className="flex flex-wrap gap-2 items-center">
+            {parsed.category && (
+              <Badge variant="outline" className="text-[10px] uppercase font-mono">
+                Category: {parsed.category}
+              </Badge>
+            )}
+            {parsed.priority && (
+              <Badge variant={getPriorityVariant(parsed.priority)} className="text-[10px]">
+                Priority: {parsed.priority}
+              </Badge>
+            )}
+            {parsed.sentiment && (
+              <span className={`inline-flex px-2 py-0.5 text-[10px] font-semibold rounded-full border ${getSentimentColor(parsed.sentiment)}`}>
+                Sentiment: {parsed.sentiment}
+              </span>
+            )}
+            {parsed.routeToResolutionAgent && (
+              <Badge variant="secondary" className="text-[10px] bg-primary/10 text-primary border border-primary/20">
+                Route → Resolution
+              </Badge>
+            )}
+            {parsed.routeToActionAgent && (
+              <Badge variant="secondary" className="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                Route → Action
+              </Badge>
+            )}
+          </div>
+        </div>
+      );
+    }
+
     if (run.agentName === 'RESOLUTION') {
+      const draft = parsed.draftReply || parsed.reply;
+      const conf = parsed.confidence ?? parsed.confidenceScore;
       return (
         <div className="space-y-3 pt-1">
           {/* Draft Reply */}
@@ -115,15 +184,21 @@ interface AgentPayloadData {
                 <Sparkles className="w-3.5 h-3.5" />
                 Draft Resolution Reply
               </span>
-              {parsed.confidenceScore != null && (
+              {conf != null && (
                 <Badge variant="outline" className="font-mono text-[10px]">
-                  Confidence: {Math.round(parsed.confidenceScore * 100)}%
+                  Confidence: {Math.round(conf * 100)}%
                 </Badge>
               )}
             </div>
-            <p className="text-xs leading-relaxed whitespace-pre-wrap text-foreground/90 font-sans">
-              {parsed.draftReply}
-            </p>
+            {draft ? (
+              <p className="text-xs leading-relaxed whitespace-pre-wrap break-words text-foreground/90 font-sans">
+                {draft}
+              </p>
+            ) : (
+              <p className="text-xs italic text-muted-foreground">
+                No draft resolution reply generated.
+              </p>
+            )}
           </div>
 
           {/* Citations */}
@@ -151,6 +226,11 @@ interface AgentPayloadData {
     }
 
     if (run.agentName === 'ACTION') {
+      const hasProposed = Boolean(
+        parsed.proposedAction &&
+        (parsed.proposedAction.amount != null || parsed.proposedAction.orderNumber || parsed.proposedAction.actionType)
+      );
+
       return (
         <div className="space-y-2 pt-1 text-xs">
           <div className="flex items-center gap-2">
@@ -163,7 +243,7 @@ interface AgentPayloadData {
             </Badge>
           </div>
 
-          {parsed.proposedAction && (
+          {hasProposed && parsed.proposedAction && (
             <div className="p-2.5 rounded bg-red-500/10 border border-red-500/20 text-xs space-y-1">
               <div className="flex items-center justify-between text-red-400 font-semibold">
                 <span className="flex items-center gap-1">
@@ -175,15 +255,17 @@ interface AgentPayloadData {
                 )}
               </div>
               <p className="text-muted-foreground text-[11px]">
-                Order: {parsed.proposedAction.orderNumber} &bull; {parsed.proposedAction.reason}
+                {parsed.proposedAction.orderNumber && `Order: ${parsed.proposedAction.orderNumber}`}
+                {parsed.proposedAction.orderNumber && parsed.proposedAction.reason && ' • '}
+                {parsed.proposedAction.reason}
               </p>
             </div>
           )}
 
-          {parsed.toolOutput && (
-            <div className="p-2 rounded bg-muted/40 font-mono text-[11px] text-muted-foreground overflow-x-auto">
+          {parsed.toolOutput && Object.keys(parsed.toolOutput).length > 0 && (
+            <div className="p-2 rounded bg-muted/40 font-mono text-[11px] text-muted-foreground overflow-x-auto break-all whitespace-pre-wrap">
               <span className="font-semibold text-foreground/80">Tool Output: </span>
-              {JSON.stringify(parsed.toolOutput)}
+              {JSON.stringify(parsed.toolOutput, null, 2)}
             </div>
           )}
         </div>
@@ -191,65 +273,103 @@ interface AgentPayloadData {
     }
 
     if (run.agentName === 'CRITIC') {
-      const requiresHuman = parsed.requiresHumanReview;
+      const verdict = parsed.verdict ?? 'UNKNOWN';
+      const score = parsed.confidence ?? parsed.score;
+      const notes = parsed.critiqueNotes || parsed.notes;
+      const isTicketResolved = ticket.status === 'SENT' || ticket.status === 'APPROVED';
+
       return (
         <div className="space-y-2 pt-1 text-xs">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-1.5 font-semibold">
               <ShieldCheck className="w-3.5 h-3.5 text-primary" />
               <span>Critic Score:</span>
               <Badge
-                variant={(parsed.score ?? 0) >= 0.85 ? 'default' : 'destructive'}
+                variant={score != null && score >= 0.85 ? 'default' : 'destructive'}
                 className="font-mono text-[11px]"
               >
-                {parsed.score != null ? parsed.score.toFixed(2) : 'N/A'}
+                {score != null ? score.toFixed(2) : 'N/A'}
               </Badge>
             </div>
 
-            <Badge
-              variant={requiresHuman ? 'outline' : 'default'}
-              className={
-                requiresHuman
-                  ? 'border-amber-500/40 text-amber-400 bg-amber-500/10 text-[10px]'
-                  : 'bg-emerald-600 text-white text-[10px]'
-              }
-            >
-              {requiresHuman ? 'Awaiting Human Approval' : 'Auto-Approved'}
-            </Badge>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {parsed.hallucinationDetected && (
+                <Badge variant="destructive" className="text-[10px]">Hallucination Detected</Badge>
+              )}
+              {parsed.policyViolationDetected && (
+                <Badge variant="destructive" className="text-[10px]">Policy Violation</Badge>
+              )}
+              {parsed.involvesFinancialAction && (
+                <Badge className="text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                  Financial Action
+                </Badge>
+              )}
+              {verdict === 'AWAITING_APPROVAL' ? (
+                isTicketResolved ? (
+                  <Badge variant="outline" className="border-emerald-500/40 text-emerald-400 bg-emerald-500/10 text-[10px] flex items-center gap-1">
+                    <CheckCircle className="w-3 h-3 text-emerald-400" />
+                    Human Review Passed (Sent)
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="border-amber-500/40 text-amber-400 bg-amber-500/10 text-[10px]">
+                    Requires Staff Sign-Off
+                  </Badge>
+                )
+              ) : verdict === 'APPROVED' ? (
+                <Badge variant="default" className="bg-emerald-600 text-white text-[10px]">
+                  Auto-Approved by Critic
+                </Badge>
+              ) : verdict === 'NEEDS_REVISION' ? (
+                <Badge variant="destructive" className="text-[10px]">
+                  Revision Required
+                </Badge>
+              ) : (
+                <Badge variant="secondary" className="text-[10px]">
+                  {verdict}
+                </Badge>
+              )}
+            </div>
           </div>
 
-          {parsed.notes && (
-            <div className="p-2 rounded bg-muted/40 text-muted-foreground text-[11px] leading-relaxed">
+          {notes && (
+            <div className="p-2 rounded bg-muted/40 text-muted-foreground text-[11px] leading-relaxed break-words">
               <span className="font-semibold text-foreground/80">Evaluation Notes: </span>
-              {parsed.notes}
+              {notes}
+            </div>
+          )}
+          {parsed.revisionFeedback && (
+            <div className="p-2 rounded bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[11px] leading-relaxed break-words">
+              <span className="font-semibold">Revision Feedback: </span>
+              {parsed.revisionFeedback}
             </div>
           )}
         </div>
       );
     }
 
-    // Default fallback
+    // Default fallback — pretty-printed JSON
     return (
-      <div className="text-xs bg-muted/60 rounded p-2.5 font-mono overflow-x-auto text-muted-foreground">
-        {run.outputPayload}
+      <div className="text-xs bg-muted/60 rounded p-2.5 font-mono overflow-x-auto break-all text-muted-foreground whitespace-pre-wrap">
+        {JSON.stringify(parsed, null, 2)}
       </div>
     );
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] !max-w-4xl max-h-[90vh] overflow-y-auto p-6">
         <DialogHeader className="border-b pb-4">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <DialogTitle className="text-xl font-bold tracking-tight">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <DialogTitle className="text-xl font-bold tracking-tight break-words">
                 {ticket.subject}
               </DialogTitle>
-              <DialogDescription className="text-sm text-muted-foreground mt-1">
-                From <span className="font-medium text-foreground">{ticket.customerName}</span> ({ticket.customerEmail}) &bull; Created {new Date(ticket.createdAt).toLocaleString()}
+              <DialogDescription className="text-sm text-muted-foreground mt-1 break-words overflow-hidden">
+                From <span className="font-medium text-foreground">{ticket.customerName}</span>{' '}
+                <span className="break-all">({ticket.customerEmail})</span> &bull; Created {new Date(ticket.createdAt).toLocaleString()}
               </DialogDescription>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0 flex-wrap">
               <Badge variant="outline" className="capitalize">
                 {ticket.status.toLowerCase().replace('_', ' ')}
               </Badge>
@@ -269,10 +389,32 @@ interface AgentPayloadData {
               <span className="font-semibold text-foreground">Customer Message</span>
               <span>{new Date(ticket.createdAt).toLocaleTimeString()}</span>
             </div>
-            <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">
+            <p className="text-sm leading-relaxed whitespace-pre-wrap break-words text-foreground/90">
               {ticket.body}
             </p>
           </div>
+
+          {/* Human Approval Recorded Banner */}
+          {humanApprovalEvent && (
+            <div className="flex items-center gap-2.5 p-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-xs text-emerald-300">
+              <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+              <div>
+                <span className="font-semibold text-emerald-200">Staff Review Sign-Off:</span> This ticket was intercepted by CriticAgent due to a financial refund, reviewed by a support specialist in the Approval Queue, and approved on{' '}
+                <span className="font-medium text-emerald-100">{new Date(humanApprovalEvent.createdAt).toLocaleString()}</span>.
+              </div>
+            </div>
+          )}
+
+          {/* Human Rejection Recorded Banner */}
+          {humanRejectionEvent && (
+            <div className="flex items-center gap-2.5 p-3 rounded-lg border border-destructive/30 bg-destructive/10 text-xs text-red-300">
+              <XCircle className="w-4 h-4 text-destructive shrink-0" />
+              <div>
+                <span className="font-semibold text-red-200">Staff Rejection Recorded:</span> This prompt injection / policy escalation was reviewed and rejected by staff on{' '}
+                <span className="font-medium text-red-100">{new Date(humanRejectionEvent.createdAt).toLocaleString()}</span>.
+              </div>
+            </div>
+          )}
 
           {/* Mailroom Intelligence Card */}
           <div className="rounded-lg border bg-muted/40 p-4 space-y-3">
@@ -308,13 +450,13 @@ interface AgentPayloadData {
           {/* Tabs for Timeline and Audit Events */}
           <Tabs defaultValue="agents" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="agents" className="gap-2">
+              <TabsTrigger value="agents" className="gap-2 text-xs sm:text-sm">
                 <Cpu className="w-4 h-4" />
-                <span>Multi-Agent Execution Pipeline ({agentRuns.length})</span>
+                <span>Multi-Agent Pipeline ({agentRuns.length})</span>
               </TabsTrigger>
-              <TabsTrigger value="events" className="gap-2">
+              <TabsTrigger value="events" className="gap-2 text-xs sm:text-sm">
                 <Activity className="w-4 h-4" />
-                <span>State Transition Audit Log ({events.length})</span>
+                <span>Audit Log ({events.length})</span>
               </TabsTrigger>
             </TabsList>
 
@@ -327,22 +469,23 @@ interface AgentPayloadData {
               ) : (
                 agentRuns.map((run) => (
                   <div key={run.id} className="border rounded-lg p-3.5 bg-card/60 space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Bot className="w-4 h-4 text-primary" />
+                    {/* Agent run header */}
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Bot className="w-4 h-4 text-primary shrink-0" />
                         <span className="font-semibold text-sm">{run.agentName}</span>
-                        <Badge variant="outline" className="text-xs font-mono">
-                          {run.model}
+                        <Badge variant="outline" className="text-xs font-mono shrink-0 max-w-[220px]" title={run.model}>
+                          <span className="truncate">{run.model}</span>
                         </Badge>
                       </div>
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-2 flex-wrap text-xs text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <Clock className="w-3.5 h-3.5" />
                           {run.durationMs}ms
                         </span>
                         <span className="flex items-center gap-1">
                           <Cpu className="w-3.5 h-3.5" />
-                          {run.promptTokens + run.completionTokens} tokens
+                          {run.promptTokens + run.completionTokens} tok
                         </span>
                         <span className="flex items-center gap-1 text-emerald-400 font-mono">
                           <DollarSign className="w-3 h-3" />
@@ -390,7 +533,7 @@ interface AgentPayloadData {
                           </div>
                         )}
                         {evt.payload && (
-                          <div className="text-[11px] font-mono text-muted-foreground mt-1.5 bg-muted/40 p-2 rounded">
+                          <div className="text-[11px] font-mono text-muted-foreground mt-1.5 bg-muted/40 p-2 rounded break-all whitespace-pre-wrap overflow-x-auto">
                             {evt.payload}
                           </div>
                         )}
