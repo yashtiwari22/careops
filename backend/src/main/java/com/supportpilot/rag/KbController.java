@@ -18,6 +18,7 @@ import java.util.UUID;
 public class KbController {
 
     private final KbArticleRepository articleRepository;
+    private final KbChunkRepository chunkRepository;
     private final HybridSearchService searchService;
 
     public record CreateArticleRequest(
@@ -25,8 +26,21 @@ public class KbController {
             @NotBlank(message = "Content is required") String content
     ) {}
 
-    public KbController(KbArticleRepository articleRepository, HybridSearchService searchService) {
+    public record ChunkDto(
+            UUID id,
+            UUID articleId,
+            int chunkIndex,
+            String content,
+            boolean hasEmbedding,
+            java.time.Instant createdAt
+    ) {}
+
+    public KbController(
+            KbArticleRepository articleRepository,
+            KbChunkRepository chunkRepository,
+            HybridSearchService searchService) {
         this.articleRepository = articleRepository;
+        this.chunkRepository = chunkRepository;
         this.searchService = searchService;
     }
 
@@ -34,6 +48,24 @@ public class KbController {
     public ResponseEntity<List<KbArticleRepository.ArticleSummaryProjection>> listArticles() {
         UUID tenantId = TenantContext.requireTenantId();
         return ResponseEntity.ok(articleRepository.findArticleSummariesByTenantId(tenantId));
+    }
+
+    @GetMapping("/{id}/chunks")
+    public ResponseEntity<List<ChunkDto>> getArticleChunks(@PathVariable UUID id) {
+        UUID tenantId = TenantContext.requireTenantId();
+        if (articleRepository.findByIdAndTenantId(id, tenantId).isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        List<KbChunk> chunks = chunkRepository.findByArticleIdOrderByChunkIndexAsc(id);
+        List<ChunkDto> dtos = chunks.stream().map(c -> new ChunkDto(
+                c.getId(),
+                c.getArticleId(),
+                c.getChunkIndex(),
+                c.getContent(),
+                c.getEmbedding() != null,
+                c.getCreatedAt()
+        )).toList();
+        return ResponseEntity.ok(dtos);
     }
 
     @PostMapping

@@ -1,6 +1,5 @@
 package com.supportpilot.agents;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.supportpilot.ticket.Ticket;
 import com.supportpilot.tools.SupportTools;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,14 +19,12 @@ import static org.mockito.Mockito.when;
 class ActionAgentTest {
 
     private SupportTools supportTools;
-    private ObjectMapper objectMapper;
     private ActionAgent actionAgent;
 
     @BeforeEach
     void setUp() {
         supportTools = Mockito.mock(SupportTools.class);
-        objectMapper = new ObjectMapper();
-        actionAgent = new ActionAgent(supportTools, objectMapper);
+        actionAgent = new ActionAgent(supportTools);
     }
 
     @Test

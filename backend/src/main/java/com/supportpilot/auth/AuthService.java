@@ -1,6 +1,5 @@
 package com.supportpilot.auth;
 
-import com.supportpilot.common.TenantContext;
 import com.supportpilot.tenant.Tenant;
 import com.supportpilot.tenant.TenantRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;

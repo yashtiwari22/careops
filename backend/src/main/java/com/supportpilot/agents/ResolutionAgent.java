@@ -119,6 +119,9 @@ public class ResolutionAgent implements Agent {
 
             var tree = objectMapper.readTree(clean.trim());
             String draft = tree.has("draftReply") ? tree.get("draftReply").asText() : "";
+            if (draft.isBlank() && tree.has("reply")) {
+                draft = tree.get("reply").asText();
+            }
             double conf = tree.has("confidence") ? tree.get("confidence").asDouble() : 0.90;
             List<String> citations = chunks.stream().map(HybridSearchService.RetrievedChunk::citationReference).toList();
 

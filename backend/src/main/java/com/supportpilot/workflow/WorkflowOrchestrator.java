@@ -91,6 +91,13 @@ public class WorkflowOrchestrator {
                 "routeToAction", triageResult.routeToActionAgent()
         ));
 
+        try {
+            // Observable pacing (1.2s) so users can watch the card in 'In Progress' column
+            Thread.sleep(1200);
+        } catch (InterruptedException ignored) {
+            Thread.currentThread().interrupt();
+        }
+
         int revisionLoop = 0;
         String draftReply = "";
         Map<String, Object> proposedAction = null;
@@ -226,7 +233,7 @@ public class WorkflowOrchestrator {
         WorkflowState fromState = ticket.getStatus();
         stateMachine.validateTransition(fromState, toState);
         ticket.setStatus(toState);
-        ticketRepository.save(ticket);
+        ticketRepository.saveAndFlush(ticket);
 
         try {
             String payloadJson = objectMapper.writeValueAsString(payload);

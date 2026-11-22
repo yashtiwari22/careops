@@ -1,6 +1,5 @@
 package com.supportpilot.llm;
 
-import java.util.List;
 import java.util.Map;
 
 /**

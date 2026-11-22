@@ -16,7 +16,6 @@ public class HybridSearchService {
 
     private static final Logger log = LoggerFactory.getLogger(HybridSearchService.class);
 
-    private final KbArticleRepository articleRepository;
     private final KbChunkRepository chunkRepository;
     private final ChunkingService chunkingService;
     private final EmbeddingService embeddingService;
@@ -32,11 +31,9 @@ public class HybridSearchService {
     ) {}
 
     public HybridSearchService(
-            KbArticleRepository articleRepository,
             KbChunkRepository chunkRepository,
             ChunkingService chunkingService,
             EmbeddingService embeddingService) {
-        this.articleRepository = articleRepository;
         this.chunkRepository = chunkRepository;
         this.chunkingService = chunkingService;
         this.embeddingService = embeddingService;

@@ -1,7 +1,5 @@
 package com.supportpilot.llm;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -14,8 +12,6 @@ import java.util.Random;
  */
 @Component("mockLlmClient")
 public class MockLlmClient implements LlmClient {
-
-    private static final Logger log = LoggerFactory.getLogger(MockLlmClient.class);
 
     private final int latencyMinMs;
     private final int latencyMaxMs;
@@ -107,11 +103,12 @@ public class MockLlmClient implements LlmClient {
 
             jsonContent = String.format("""
             {
+              "draftReply": "%s",
               "reply": "%s",
               "citations": %s,
               "confidence": 0.94
             }
-            """, reply.replace("\"", "\\\""), citations);
+            """, reply.replace("\"", "\\\""), reply.replace("\"", "\\\""), citations);
         }
 
         long duration = System.currentTimeMillis() - startTime;

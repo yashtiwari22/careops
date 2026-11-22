@@ -1,7 +1,6 @@
 package com.supportpilot.agents;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.UUID;
@@ -9,7 +8,6 @@ import java.util.UUID;
 /**
  * Spring Data repository for AgentRun records.
  */
-@Repository
 public interface AgentRunRepository extends JpaRepository<AgentRun, UUID> {
     List<AgentRun> findByTicketIdOrderByCreatedAtAsc(UUID ticketId);
 

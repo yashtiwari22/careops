@@ -8,8 +8,11 @@ import com.supportpilot.workflow.TicketEvent;
 import com.supportpilot.workflow.TicketEventRepository;
 import com.supportpilot.workflow.WorkflowState;
 import com.supportpilot.workflow.WorkflowStateMachine;
+import com.supportpilot.metrics.SupportPilotMetrics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,9 +35,7 @@ public class ApprovalService {
     private final WorkflowStateMachine stateMachine;
     private final SseHub sseHub;
     private final ObjectMapper objectMapper;
-
-    @org.springframework.beans.factory.annotation.Autowired(required = false)
-    private com.supportpilot.metrics.SupportPilotMetrics metrics;
+    private final SupportPilotMetrics metrics;
 
     public record ApprovalDto(
             UUID id,
@@ -56,12 +57,25 @@ public class ApprovalService {
             WorkflowStateMachine stateMachine,
             SseHub sseHub,
             ObjectMapper objectMapper) {
+        this(approvalRepository, ticketRepository, ticketEventRepository, stateMachine, sseHub, objectMapper, null);
+    }
+
+    @Autowired
+    public ApprovalService(
+            ApprovalRepository approvalRepository,
+            TicketRepository ticketRepository,
+            TicketEventRepository ticketEventRepository,
+            WorkflowStateMachine stateMachine,
+            SseHub sseHub,
+            ObjectMapper objectMapper,
+            @Nullable SupportPilotMetrics metrics) {
         this.approvalRepository = approvalRepository;
         this.ticketRepository = ticketRepository;
         this.ticketEventRepository = ticketEventRepository;
         this.stateMachine = stateMachine;
         this.sseHub = sseHub;
         this.objectMapper = objectMapper;
+        this.metrics = metrics;
     }
 
     public List<ApprovalDto> listPendingApprovals(UUID tenantId) {

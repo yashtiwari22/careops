@@ -17,7 +17,6 @@ import org.springframework.kafka.core.*;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Executors;
 
 /**
  * Spring Kafka configuration enabled when supportpilot.queue.type=kafka.

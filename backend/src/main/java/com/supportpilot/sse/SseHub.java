@@ -1,7 +1,5 @@
 package com.supportpilot.sse;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -20,7 +18,6 @@ import java.util.concurrent.atomic.AtomicLong;
 @Component
 public class SseHub {
 
-    private static final Logger log = LoggerFactory.getLogger(SseHub.class);
     private static final long EMITTER_TIMEOUT = 30 * 60 * 1000L; // 30 minutes
 
     private final Map<UUID, List<SseEmitter>> tenantEmitters = new ConcurrentHashMap<>();

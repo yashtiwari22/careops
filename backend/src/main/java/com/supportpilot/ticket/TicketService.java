@@ -14,8 +14,11 @@ import com.supportpilot.workflow.TicketEventRepository;
 import com.supportpilot.workflow.WorkflowOrchestrator;
 import com.supportpilot.workflow.WorkflowState;
 import com.supportpilot.workflow.WorkflowStateMachine;
+import com.supportpilot.metrics.SupportPilotMetrics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,9 +44,7 @@ public class TicketService {
     private final WorkflowOrchestrator workflowOrchestrator;
     private final SseHub sseHub;
     private final ObjectMapper objectMapper;
-
-    @org.springframework.beans.factory.annotation.Autowired(required = false)
-    private com.supportpilot.metrics.SupportPilotMetrics metrics;
+    private final SupportPilotMetrics metrics;
 
     public TicketService(
             TicketRepository ticketRepository,
@@ -55,6 +56,22 @@ public class TicketService {
             WorkflowOrchestrator workflowOrchestrator,
             SseHub sseHub,
             ObjectMapper objectMapper) {
+        this(ticketRepository, ticketEventRepository, agentRunRepository, ticketQueue,
+                stateMachine, triageAgent, workflowOrchestrator, sseHub, objectMapper, null);
+    }
+
+    @Autowired
+    public TicketService(
+            TicketRepository ticketRepository,
+            TicketEventRepository ticketEventRepository,
+            AgentRunRepository agentRunRepository,
+            TicketQueue ticketQueue,
+            WorkflowStateMachine stateMachine,
+            TriageAgent triageAgent,
+            WorkflowOrchestrator workflowOrchestrator,
+            SseHub sseHub,
+            ObjectMapper objectMapper,
+            @Nullable SupportPilotMetrics metrics) {
         this.ticketRepository = ticketRepository;
         this.ticketEventRepository = ticketEventRepository;
         this.agentRunRepository = agentRunRepository;
@@ -64,6 +81,7 @@ public class TicketService {
         this.workflowOrchestrator = workflowOrchestrator;
         this.sseHub = sseHub;
         this.objectMapper = objectMapper;
+        this.metrics = metrics;
     }
 
     /**
@@ -138,7 +156,7 @@ public class TicketService {
         }
 
         ticket.setStatus(toState);
-        ticketRepository.save(ticket);
+        ticketRepository.saveAndFlush(ticket);
 
         // Persist AgentRun metrics
         saveAgentRun(ticket, agentResult);
@@ -173,16 +191,35 @@ public class TicketService {
         log.info("Successfully triaged/sorted ticket {}: Category={}, Priority={}, Sentiment={}",
                 ticket.getId(), ticket.getCategory(), ticket.getPriority(), ticket.getSentiment());
 
-        // Launch full multi-agent pipeline (ResolutionAgent || ActionAgent -> CriticAgent -> Auto/Human Approval)
-        if (agentResult.payload() instanceof com.supportpilot.agents.MailroomResult mailroomResult) {
-            workflowOrchestrator.executeMultiAgentPipeline(ticket.getId(), mailroomResult);
-        } else if (agentResult.payload() instanceof TriageResult triageResult) {
-            workflowOrchestrator.executeMultiAgentPipeline(ticket.getId(), triageResult);
+        // Extract triage payload for downstream pipeline
+        TriageResult triagePayload;
+        if (agentResult.payload() instanceof com.supportpilot.agents.MailroomResult mr) {
+            triagePayload = new TriageResult(
+                    mr.category(), mr.priority(), mr.sentiment(), mr.summary(),
+                    mr.routeToResolutionAgent(), mr.routeToActionAgent()
+            );
+        } else if (agentResult.payload() instanceof TriageResult tr) {
+            triagePayload = tr;
+        } else {
+            triagePayload = new TriageResult("GENERAL", "MEDIUM", "NEUTRAL", "", true, false);
         }
+
+        // Asynchronously launch downstream multi-agent pipeline with observable demo pacing
+        // so tickets visibly transition across the Kanban columns in real time
+        final TriageResult finalTriage = triagePayload;
+        Thread.ofVirtual().name("pipeline-" + ticket.getId()).start(() -> {
+            try {
+                // 1.2s pacing so user can observe ticket in 'Mailroom Sorted' column
+                Thread.sleep(1200);
+                workflowOrchestrator.executeMultiAgentPipeline(ticketId, finalTriage);
+            } catch (Exception e) {
+                log.error("Failed to execute multi-agent pipeline for ticket {}", ticketId, e);
+            }
+        });
     }
 
     public List<TicketResponse> listTickets(UUID tenantId, WorkflowState status, String priority, String category, String search) {
-        return ticketRepository.findFiltered(tenantId, status, priority, category, search)
+        return ticketRepository.findFiltered(tenantId, status != null ? status.name() : null, priority, category, search)
                 .stream()
                 .map(TicketResponse::fromEntity)
                 .toList();

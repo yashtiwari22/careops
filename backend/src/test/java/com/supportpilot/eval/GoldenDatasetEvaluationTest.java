@@ -37,7 +37,7 @@ class GoldenDatasetEvaluationTest {
         triageAgent = new TriageAgent(mockLlm, objectMapper);
 
         supportTools = Mockito.mock(SupportTools.class);
-        actionAgent = new ActionAgent(supportTools, objectMapper);
+        actionAgent = new ActionAgent(supportTools);
         criticAgent = new CriticAgent(mockLlm, objectMapper);
 
         // Seed deterministic tool responses

@@ -1,10 +1,7 @@
 package com.supportpilot.agents;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.supportpilot.ticket.Ticket;
 import com.supportpilot.tools.SupportTools;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -19,11 +16,9 @@ import java.util.regex.Pattern;
 @Component
 public class ActionAgent implements Agent {
 
-    private static final Logger log = LoggerFactory.getLogger(ActionAgent.class);
     private static final Pattern ORDER_PATTERN = Pattern.compile("(?i)(ORD-\\d+|#?\\d{4,6})");
 
     private final SupportTools supportTools;
-    private final ObjectMapper objectMapper;
 
     public record ActionResult(
             boolean actionExecuted,
@@ -33,9 +28,8 @@ public class ActionAgent implements Agent {
             Map<String, Object> proposedAction
     ) {}
 
-    public ActionAgent(SupportTools supportTools, ObjectMapper objectMapper) {
+    public ActionAgent(SupportTools supportTools) {
         this.supportTools = supportTools;
-        this.objectMapper = objectMapper;
     }
 
     @Override
